@@ -1,0 +1,110 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29609.76
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakPrinterScript", "WakPrinterScript\WakPrinterScript.csproj", "{1E2E4BA8-9807-4414-A62E-C7C9C6B5E68E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpandedBlockCommands", "ExpandedBlockCommands\ExpandedBlockCommands.csproj", "{FD58A58C-62A4-4DA9-8C66-885D94AE1284}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakPowerInputDisplay", "WakPowerInputDisplay\WakPowerInputDisplay.csproj", "{8C11C85C-749A-4266-8E5B-0C7FBCA7018F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CruiseControl", "CruiseControl\CruiseControl.csproj", "{CD8DC73A-3B17-48AC-886A-6C8D9D820898}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HangarDoors", "HangarDoors\HangarDoors.csproj", "{71654352-1BD3-4747-8745-30B27087F1AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmoothWheelControls", "SmoothWheelControls\SmoothWheelControls.csproj", "{ACDC3BAF-1EEA-485B-A209-D14A85C2A22B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrbitalTargeting", "OrbitalTargeting\OrbitalTargeting.csproj", "{831A17A7-CC26-474F-9C08-37D74BC1923C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningCruiseControl", "MiningCruiseControl\MiningCruiseControl.csproj", "{4E681A11-914D-4564-82E4-3D82DC3A9DD7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistanceToPlanetDisplay", "DistanceToPlanetDisplay\DistanceToPlanetDisplay.csproj", "{A0DC77CD-6876-4F0A-9CFF-D2EBF1562160}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunnelBoringMachine", "TunnelBoringMachine\TunnelBoringMachine.csproj", "{CC3446C4-9641-4F5E-B42E-DB4525C5CE21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TunnelBoringMachineBase", "TunnelBoringMachineBase\TunnelBoringMachineBase.csproj", "{804283F1-4082-47C2-9CF7-5D900A7E53F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinerWeightLimiter", "MinerWeightLimiter\MinerWeightLimiter.csproj", "{9A78C8AF-829A-4B17-8A69-066965EC401A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OuroborousBatteryPower", "OuroborousBatteryPower\OuroborousBatteryPower.csproj", "{24795BA8-F55A-4453-B763-8E19C1C21D67}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HingeDoorController", "HingeDoorController\HingeDoorController.csproj", "{8BC9F458-7F08-4D62-B671-83DFA08B2702}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GravityGyroController", "GravityDriveController\GravityGyroController.csproj", "{E873D73B-2613-43D7-B3FB-9A3C12F17364}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InkjetPrinter", "InkjetPrinter\InkjetPrinter.csproj", "{DB08A8B6-827B-43A1-9709-B7F34705379D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatteryFillLevelMeter", "BatteryFillLevelMeter\BatteryFillLevelMeter.csproj", "{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "StateMachineScriptLib", "StateMachineScriptLib\StateMachineScriptLib.shproj", "{27E338AD-B54C-4A2A-A671-97515BAFC8C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakStateMachineTestScript", "WakStateMachineTestScript\WakStateMachineTestScript.csproj", "{BE261820-9D9E-4030-9886-00183694C477}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{1e2e4ba8-9807-4414-a62e-c7c9c6b5e68e}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{24795ba8-f55a-4453-b763-8e19c1c21d67}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{27e338ad-b54c-4a2a-a671-97515bafc8c7}*SharedItemsImports = 13
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{4e681a11-914d-4564-82e4-3d82dc3a9dd7}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{71654352-1bd3-4747-8745-30b27087f1af}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{831a17a7-cc26-474f-9c08-37d74bc1923c}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{8bc9f458-7f08-4d62-b671-83dfa08b2702}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{9a78c8af-829a-4b17-8a69-066965ec401a}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{a0dc77cd-6876-4f0a-9cff-d2ebf1562160}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{acdc3baf-1eea-485b-a209-d14a85c2a22b}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{be261820-9d9e-4030-9886-00183694c477}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{cc3446c4-9641-4f5e-b42e-db4525c5ce21}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{cd8dc73a-3b17-48ac-886a-6c8d9d820898}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{db08a8b6-827b-43a1-9709-b7f34705379d}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{e873d73b-2613-43d7-b3fb-9a3c12f17364}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{fd58a58c-62a4-4da9-8c66-885d94ae1284}*SharedItemsImports = 4
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E2E4BA8-9807-4414-A62E-C7C9C6B5E68E}.Debug|x64.ActiveCfg = Debug|x64
+		{1E2E4BA8-9807-4414-A62E-C7C9C6B5E68E}.Debug|x64.Build.0 = Debug|x64
+		{FD58A58C-62A4-4DA9-8C66-885D94AE1284}.Debug|x64.ActiveCfg = Debug|x64
+		{FD58A58C-62A4-4DA9-8C66-885D94AE1284}.Debug|x64.Build.0 = Debug|x64
+		{8C11C85C-749A-4266-8E5B-0C7FBCA7018F}.Debug|x64.ActiveCfg = Debug|x64
+		{8C11C85C-749A-4266-8E5B-0C7FBCA7018F}.Debug|x64.Build.0 = Debug|x64
+		{CD8DC73A-3B17-48AC-886A-6C8D9D820898}.Debug|x64.ActiveCfg = Debug|x64
+		{CD8DC73A-3B17-48AC-886A-6C8D9D820898}.Debug|x64.Build.0 = Debug|x64
+		{71654352-1BD3-4747-8745-30B27087F1AF}.Debug|x64.ActiveCfg = Debug|x64
+		{71654352-1BD3-4747-8745-30B27087F1AF}.Debug|x64.Build.0 = Debug|x64
+		{ACDC3BAF-1EEA-485B-A209-D14A85C2A22B}.Debug|x64.ActiveCfg = Debug|x64
+		{ACDC3BAF-1EEA-485B-A209-D14A85C2A22B}.Debug|x64.Build.0 = Debug|x64
+		{831A17A7-CC26-474F-9C08-37D74BC1923C}.Debug|x64.ActiveCfg = Debug|x64
+		{831A17A7-CC26-474F-9C08-37D74BC1923C}.Debug|x64.Build.0 = Debug|x64
+		{4E681A11-914D-4564-82E4-3D82DC3A9DD7}.Debug|x64.ActiveCfg = Debug|x64
+		{4E681A11-914D-4564-82E4-3D82DC3A9DD7}.Debug|x64.Build.0 = Debug|x64
+		{A0DC77CD-6876-4F0A-9CFF-D2EBF1562160}.Debug|x64.ActiveCfg = Debug|x64
+		{A0DC77CD-6876-4F0A-9CFF-D2EBF1562160}.Debug|x64.Build.0 = Debug|x64
+		{CC3446C4-9641-4F5E-B42E-DB4525C5CE21}.Debug|x64.ActiveCfg = Debug|x64
+		{CC3446C4-9641-4F5E-B42E-DB4525C5CE21}.Debug|x64.Build.0 = Debug|x64
+		{804283F1-4082-47C2-9CF7-5D900A7E53F0}.Debug|x64.ActiveCfg = Debug|x64
+		{804283F1-4082-47C2-9CF7-5D900A7E53F0}.Debug|x64.Build.0 = Debug|x64
+		{9A78C8AF-829A-4B17-8A69-066965EC401A}.Debug|x64.ActiveCfg = Debug|x64
+		{9A78C8AF-829A-4B17-8A69-066965EC401A}.Debug|x64.Build.0 = Debug|x64
+		{24795BA8-F55A-4453-B763-8E19C1C21D67}.Debug|x64.ActiveCfg = Debug|x64
+		{24795BA8-F55A-4453-B763-8E19C1C21D67}.Debug|x64.Build.0 = Debug|x64
+		{8BC9F458-7F08-4D62-B671-83DFA08B2702}.Debug|x64.ActiveCfg = Debug|x64
+		{8BC9F458-7F08-4D62-B671-83DFA08B2702}.Debug|x64.Build.0 = Debug|x64
+		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.ActiveCfg = Debug|x64
+		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.Build.0 = Debug|x64
+		{DB08A8B6-827B-43A1-9709-B7F34705379D}.Debug|x64.ActiveCfg = Debug|x64
+		{DB08A8B6-827B-43A1-9709-B7F34705379D}.Debug|x64.Build.0 = Debug|x64
+		{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}.Debug|x64.ActiveCfg = Debug|x64
+		{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}.Debug|x64.Build.0 = Debug|x64
+		{BE261820-9D9E-4030-9886-00183694C477}.Debug|x64.ActiveCfg = Debug|x64
+		{BE261820-9D9E-4030-9886-00183694C477}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0607AFBC-EC7C-4A5F-9F4D-76532862EDD3}
+	EndGlobalSection
+EndGlobal

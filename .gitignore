@@ -1,0 +1,5 @@
+**/*.pdb
+**/.vs
+**/whitelist.cache
+**/obj
+**/bin
