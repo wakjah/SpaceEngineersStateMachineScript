@@ -1,5 +1,85 @@
 ﻿R e a d m e
 -----------
 
-In this file you can include any instructions or other comments you want to have injected onto the 
-top of your final script. You can safely delete this file if you do not want any such comments.
+This script accepts commands in a function call-like syntax:
+
+  command_1(arg_1, ...); command_2(arg_1, ...);
+
+String arguments should be enclosed in double quotes. The double quote character can
+be escaped by preceding it with a backslash. Similarly a newline character can be inserted
+with \n.
+
+Numeric arguments can be in any format accepted by the C# parser for the appropriate type
+(float.Parse, etc.).
+
+Boolean arguments should have the value 'true' or 'false' (without quotes).
+
+Whitespace is ignored.
+
+A semicolon is required at the end of each command.
+
+There are two ways to run commands:
+
+  1. Directly pass the command sequence into the programmable block's Run.
+  2. Put the commands in the programmable block's custom data, preceded by a numeric 
+     identifier, followed by a colon, and pass this numeric identifier to the programmable 
+     block's Run.
+
+Most commands accept a block name. The command will apply to all blocks of the appropriate 
+type whose name contains the specified string. For example if your grid has pistons 
+"Piston 1" and "Piston 2" and you call set_enabled("Piston", true), both pistons will be 
+enabled.
+
+Available commands:
+
+set_piston_velocity(name, velocity_mpers)
+
+set_enabled(name, enabled)
+
+standard_startup() 
+    A sequence of commands for a standard startup routine for a flying ship
+
+standard_shutdown() 
+    A sequence of commands for a standard shutdown routine for a flying ship
+
+set_rotor_velocity(name, velocity_rpm)
+
+set_rotor_lock(name, enabled)
+
+move_rotor_to_angle(name, angle_deg, threshold_deg, speed_rpm) 
+    Move the given rotor(s) in the appropriate direction at the specified speed until the 
+    distance between the rotor's angle and the desired angle is less than the threshold.
+
+move_piston_to_extension(name, extension_m, threshold_m, speed_mpers)
+    Move the given piston(s) in the appropriate direction at the specified speed until the
+    distance between the piston's extension and the desired extension is less than the 
+    threshold.
+
+sleep(seconds)
+    Pause for the given number of seconds. Accepts a floating point number. Can be less 
+    than 1.
+
+
+
+E x a m p l e
+-------------
+
+Set the custom data to the following:
+
+1: move_piston_to_extension("Piston", 4, 0.025, 1.5); move_rotor_to_angle("Rotor", 42, 0.5, 1); sleep(0.5); set_enabled("Spotlight", true);
+2: set_enabled("Spotlight", false); move_rotor_to_angle("Rotor", 0, 0.5, 1); move_piston_to_extension("Piston", 0, 0.025, 1.5);
+
+Then, on a control seat, set a button to Run the programmable block with the argument 
+value being the integer value 1 or 2.
+
+Running 1 will move pistons to 4 m extension, then move rotors to 42 degrees, sleep 
+half a second, then enable spotlights. Command 2 will turn the spotlights off, then
+move the rotor back to 0 degrees and retract the pistons to 0 m extension.
+
+
+S o u r c e
+-----------
+
+The source code for this script can be found on github at 
+
+    https://github.com/wakjah/SpaceEngineersStateMachineScript

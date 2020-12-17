@@ -31,8 +31,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OuroborousBatteryPower", "O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HingeDoorController", "HingeDoorController\HingeDoorController.csproj", "{8BC9F458-7F08-4D62-B671-83DFA08B2702}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GravityGyroController", "GravityDriveController\GravityGyroController.csproj", "{E873D73B-2613-43D7-B3FB-9A3C12F17364}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InkjetPrinter", "InkjetPrinter\InkjetPrinter.csproj", "{DB08A8B6-827B-43A1-9709-B7F34705379D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatteryFillLevelMeter", "BatteryFillLevelMeter\BatteryFillLevelMeter.csproj", "{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}"
@@ -40,6 +38,8 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "StateMachineScriptLib", "StateMachineScriptLib\StateMachineScriptLib.shproj", "{27E338AD-B54C-4A2A-A671-97515BAFC8C7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakStateMachineTestScript", "WakStateMachineTestScript\WakStateMachineTestScript.csproj", "{BE261820-9D9E-4030-9886-00183694C477}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GravityGyroController", "GravityGyroController\GravityGyroController.csproj", "{E873D73B-2613-43D7-B3FB-9A3C12F17364}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -92,14 +92,14 @@ Global
 		{24795BA8-F55A-4453-B763-8E19C1C21D67}.Debug|x64.Build.0 = Debug|x64
 		{8BC9F458-7F08-4D62-B671-83DFA08B2702}.Debug|x64.ActiveCfg = Debug|x64
 		{8BC9F458-7F08-4D62-B671-83DFA08B2702}.Debug|x64.Build.0 = Debug|x64
-		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.ActiveCfg = Debug|x64
-		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.Build.0 = Debug|x64
 		{DB08A8B6-827B-43A1-9709-B7F34705379D}.Debug|x64.ActiveCfg = Debug|x64
 		{DB08A8B6-827B-43A1-9709-B7F34705379D}.Debug|x64.Build.0 = Debug|x64
 		{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}.Debug|x64.ActiveCfg = Debug|x64
 		{5F6B9D27-372D-412D-95C4-3B920CDB8CE2}.Debug|x64.Build.0 = Debug|x64
 		{BE261820-9D9E-4030-9886-00183694C477}.Debug|x64.ActiveCfg = Debug|x64
 		{BE261820-9D9E-4030-9886-00183694C477}.Debug|x64.Build.0 = Debug|x64
+		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.ActiveCfg = Debug|x64
+		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
