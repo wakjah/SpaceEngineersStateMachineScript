@@ -59,6 +59,20 @@ sleep(seconds)
     Pause for the given number of seconds. Accepts a floating point number. Can be less 
     than 1.
 
+trigger_timer_block(name)
+    This script is mostly meant for commands things that cannot be achieved by timer 
+    blocks alone. For everything else, you can still trigger a timer block using this
+    command.
+
+start_timer_block(name)
+
+stop_timer_block(name)
+
+set_landing_gear_locked(name, locked)
+
+set_landing_gear_auto_lock(name, enabled)
+
+set_connector_connected(name, connected)
 
 
 E x a m p l e

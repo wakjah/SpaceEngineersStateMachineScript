@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29609.76
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakPrinterScript", "WakPrinterScript\WakPrinterScript.csproj", "{1E2E4BA8-9807-4414-A62E-C7C9C6B5E68E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExpandedBlockCommands", "ExpandedBlockCommands\ExpandedBlockCommands.csproj", "{FD58A58C-62A4-4DA9-8C66-885D94AE1284}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Expanded Block Commands", "ExpandedBlockCommands\Expanded Block Commands.csproj", "{FD58A58C-62A4-4DA9-8C66-885D94AE1284}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakPowerInputDisplay", "WakPowerInputDisplay\WakPowerInputDisplay.csproj", "{8C11C85C-749A-4266-8E5B-0C7FBCA7018F}"
 EndProject

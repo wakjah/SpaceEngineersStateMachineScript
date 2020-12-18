@@ -135,6 +135,30 @@ namespace IngameScript
                     {
                         return triggerSleep(args);
                     }
+                    else if (command == "trigger_timer_block")
+                    {
+                        return triggerTimerBlock(args);
+                    }
+                    else if (command == "start_timer_block")
+                    {
+                        return triggerStartTimerBlock(args);
+                    }
+                    else if (command == "stop_timer_block")
+                    {
+                        return triggerStopTimerBlock(args);
+                    }
+                    else if (command == "set_landing_gear_locked")
+                    {
+                        return triggerSetLandingGearLocked(args);
+                    }
+                    else if (command == "set_landing_gear_auto_lock")
+                    {
+                        return triggerSetLandingGearAutoLock(args);
+                    }
+                    else if (command == "set_connector_connected")
+                    {
+                        return triggerSetConnectorConnected(args);
+                    }
                     else
                     {
                         Program.Echo("Unrecognised command '" + command + "'");
@@ -348,6 +372,92 @@ namespace IngameScript
                 transition(new SleepState(time_s));
 
                 return TriggerResult.Async;
+            }
+
+            private TriggerResult triggerTimerBlock(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 1 args: name");
+                    return TriggerResult.Error;
+                }
+
+                forEachBlockOfType<IMyTimerBlock>(t => t.Trigger(), b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerStartTimerBlock(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 1 args: name");
+                    return TriggerResult.Error;
+                }
+
+                forEachBlockOfType<IMyTimerBlock>(t => t.StartCountdown(), b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerStopTimerBlock(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 1 args: name");
+                    return TriggerResult.Error;
+                }
+
+                forEachBlockOfType<IMyTimerBlock>(t => t.StopCountdown(), b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerSetLandingGearLocked(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 2 args: name, locked");
+                    return TriggerResult.Error;
+                }
+
+                bool locked = bool.Parse(args[1]);
+
+                Action<IMyLandingGear> action = locked ? (Action<IMyLandingGear>)(b => b.Lock()) : (b => b.Unlock());
+                forEachBlockOfType<IMyLandingGear>(action, b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerSetLandingGearAutoLock(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 2 args: name, enabled");
+                    return TriggerResult.Error;
+                }
+
+                bool enabled = bool.Parse(args[1]);
+
+                forEachBlockOfType<IMyLandingGear>(b => b.AutoLock = enabled, b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerSetConnectorConnected(List<string> args)
+            {
+                if (args.Count < 1)
+                {
+                    Program.Echo("Expected 2 args: name, locked");
+                    return TriggerResult.Error;
+                }
+
+                bool locked = bool.Parse(args[1]);
+
+                Action<IMyShipConnector> action = locked ? (Action<IMyShipConnector>)(b => b.Connect()) : (b => b.Disconnect());
+                forEachBlockOfType<IMyShipConnector>(action, b => b.CustomName.Contains(args[0]) && isSameConstructAsMe(b));
+
+                return TriggerResult.Ok;
             }
 
             private List<IMyTerminalBlock> _tempBlocks = new List<IMyTerminalBlock>(16);
