@@ -159,6 +159,14 @@ namespace IngameScript
                     {
                         return triggerSetConnectorConnected(args);
                     }
+                    else if (command == "set_value")
+                    {
+                        return triggerSetValue(args);
+                    }
+                    else if (command == "apply_action")
+                    {
+                        return triggerApplyAction(args);
+                    }
                     else
                     {
                         Program.Echo("Unrecognised command '" + command + "'");
@@ -170,6 +178,15 @@ namespace IngameScript
                     Program.Echo("Error: " + e.Message);
                     return TriggerResult.Error;
                 }
+                finally
+                {
+                    cleanup();
+                }
+            }
+
+            private void cleanup()
+            {
+                _tempBlocks.Clear();
             }
 
             private TriggerResult triggerPistonVelocity(List<string> args)
@@ -415,7 +432,7 @@ namespace IngameScript
 
             private TriggerResult triggerSetLandingGearLocked(List<string> args)
             {
-                if (args.Count < 1)
+                if (args.Count < 2)
                 {
                     Program.Echo("Expected 2 args: name, locked");
                     return TriggerResult.Error;
@@ -431,7 +448,7 @@ namespace IngameScript
 
             private TriggerResult triggerSetLandingGearAutoLock(List<string> args)
             {
-                if (args.Count < 1)
+                if (args.Count < 2)
                 {
                     Program.Echo("Expected 2 args: name, enabled");
                     return TriggerResult.Error;
@@ -446,7 +463,7 @@ namespace IngameScript
 
             private TriggerResult triggerSetConnectorConnected(List<string> args)
             {
-                if (args.Count < 1)
+                if (args.Count < 2)
                 {
                     Program.Echo("Expected 2 args: name, locked");
                     return TriggerResult.Error;
@@ -460,16 +477,126 @@ namespace IngameScript
                 return TriggerResult.Ok;
             }
 
+            private TriggerResult triggerSetValue(List<string> args)
+            {
+                if (args.Count < 3)
+                {
+                    Program.Echo("Expected 3 args: name, property_name, value");
+                    return TriggerResult.Error;
+                }
+
+                string name = args[0];
+                string propertyName = args[1];
+                string valueStr = args[2];
+
+                findBlocksOfType<IMyTerminalBlock>(_tempBlocks, b => b.CustomName.Contains(name) && isSameConstructAsMe(b));
+
+                if (_tempBlocks.Count == 0)
+                {
+                    return TriggerResult.Ok;
+                }
+
+                ITerminalProperty property = _tempBlocks[0].GetProperty(propertyName);
+                if (property == null)
+                {
+                    Program.Echo("No property '" + propertyName + "' for block of type '" + _tempBlocks[0].GetType() + "'");
+                    return TriggerResult.Error;
+                }
+
+                if (property.TypeName == "Single")
+                {
+                    float value = float.Parse(valueStr);
+                    return setProperty(_tempBlocks, propertyName, value);
+                }
+                else if (property.TypeName == "Boolean")
+                {
+                    bool value = bool.Parse(valueStr);
+                    return setProperty(_tempBlocks, propertyName, value);
+                }
+                else if (property.TypeName == "StringBuilder")
+                {
+                    return setProperty(_tempBlocks, propertyName, new StringBuilder(valueStr));
+                }
+                else if (property.TypeName == "Int64")
+                {
+                    long value = long.Parse(valueStr);
+                    return setProperty(_tempBlocks, propertyName, value);
+                }
+                else if (property.TypeName == "Color")
+                {
+                    if (args.Count < 5)
+                    {
+                        Program.Echo("Expected 5 args for color property: name, property_name, r, g, b");
+                        return TriggerResult.Error;
+                    }
+                    int r = int.Parse(args[2]);
+                    int g = int.Parse(args[3]);
+                    int b = int.Parse(args[4]);
+                    return setProperty(_tempBlocks, propertyName, new VRageMath.Color(r, g, b));
+                }
+
+                Program.Echo("Unrecognised property type");
+                return TriggerResult.Error;
+            }
+
+            private TriggerResult setProperty<T>(List<IMyTerminalBlock> blocks, string propertyName, T value)
+            {
+                foreach (IMyTerminalBlock b in blocks)
+                {
+                    ITerminalProperty property = b.GetProperty(propertyName);
+                    if (property == null)
+                    {
+                        Program.Echo("No property '" + propertyName + "' for block of type '" + _tempBlocks[0].GetType() + "'");
+                        return TriggerResult.Error;
+                    }
+                    b.SetValue(propertyName, value);
+                }
+                return TriggerResult.Ok;
+            }
+
+            private TriggerResult triggerApplyAction(List<string> args)
+            {
+                if (args.Count < 2)
+                {
+                    Program.Echo("Expected 2 args: name, action");
+                    return TriggerResult.Error;
+                }
+
+                string name = args[0];
+                string actionName = args[1];
+                
+                findBlocksOfType<IMyTerminalBlock>(_tempBlocks, b => b.CustomName.Contains(name) && isSameConstructAsMe(b));
+
+                foreach (IMyTerminalBlock b in _tempBlocks)
+                {
+                    ITerminalAction action = b.GetActionWithName(actionName);
+                    if (action == null)
+                    {
+                        Program.Echo("No action '" + actionName + "' for block of type '" + b.GetType() + "'");
+                        return TriggerResult.Error;
+                    }
+                    action.Apply(b);
+                }
+                
+                return TriggerResult.Ok;
+            }
+
             private List<IMyTerminalBlock> _tempBlocks = new List<IMyTerminalBlock>(16);
             private void forEachBlockOfType<T>(Action<T> consumer, Func<IMyTerminalBlock, bool> collect = null) where T : class
             {
-                _tempBlocks.Clear();
-                Program.GridTerminalSystem.GetBlocksOfType<T>(_tempBlocks, collect);
+                findBlocksOfType<T>(_tempBlocks, collect);
 
                 foreach (IMyTerminalBlock block in _tempBlocks)
                 {
                     consumer.Invoke((T)block);
                 }
+            }
+
+            private void findBlocksOfType<T>(List<IMyTerminalBlock> outBlocks, Func<IMyTerminalBlock, bool> collect = null) where T : class
+            {
+                outBlocks.Clear();
+
+                Program.GridTerminalSystem.GetBlocksOfType<T>(_tempBlocks, collect);
             }
 
             private static void enable(IMyTerminalBlock block)

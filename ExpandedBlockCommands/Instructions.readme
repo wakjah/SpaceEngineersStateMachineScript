@@ -60,9 +60,6 @@ sleep(seconds)
     than 1.
 
 trigger_timer_block(name)
-    This script is mostly meant for commands things that cannot be achieved by timer 
-    blocks alone. For everything else, you can still trigger a timer block using this
-    command.
 
 start_timer_block(name)
 
@@ -73,6 +70,19 @@ set_landing_gear_locked(name, locked)
 set_landing_gear_auto_lock(name, enabled)
 
 set_connector_connected(name, connected)
+
+set_value(name, property_name, value)
+    Generic method to set the value of any property (slider / toggle) in the terminal. 
+    Property names and types for every kind of block can be found at 
+    https://github.com/malware-dev/MDK-SE/wiki/List-Of-Terminal-Properties-and-Actions
+
+set_value(name, property_name, r, g, b)
+    Generic method to set any property of type Color.
+
+apply_action(name, action_name)
+    Generic method to apply any action normally available on a button / control seat 
+    toolbar. Action names for every kind of block can be found at 
+    https://github.com/malware-dev/MDK-SE/wiki/List-Of-Terminal-Properties-and-Actions
 
 
 E x a m p l e
