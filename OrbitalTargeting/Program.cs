@@ -164,6 +164,7 @@ namespace IngameScript
             public List<Gyroscope> _compensatedGyros = new List<Gyroscope>(16);
             public List<IMyTextPanel> _textPanels = new List<IMyTextPanel>(1);
             public List<IMyTextPanel> _textPanelsAux = new List<IMyTextPanel>(1);
+            public List<IMyTextPanel> _textPanelsTargetting = new List<IMyTextPanel>(1);
             public List<IMyTextPanel> _textPanelsDebug = new List<IMyTextPanel>(1);
             public List<IMyShipController> _cockpits = new List<IMyShipController>(16);
             public List<IMyBatteryBlock> _batteries = new List<IMyBatteryBlock>(16);
@@ -208,13 +209,15 @@ namespace IngameScript
             {
                 log("Update blocks");
 
-                updateTargetPositionFromCustomData();
                 
                 _textPanels.Clear();
                 Program.GridTerminalSystem.GetBlocksOfType(_textPanels, b => b.CustomName.Contains("CruiseMain"));
 
                 _textPanelsAux.Clear();
                 Program.GridTerminalSystem.GetBlocksOfType(_textPanelsAux, b => b.CustomName.Contains("CruiseAux"));
+
+                _textPanelsTargetting.Clear();
+                Program.GridTerminalSystem.GetBlocksOfType(_textPanelsTargetting, b => b.CustomName.Contains("CruiseTargettingData"));
 
                 _textPanelsDebug.Clear();
                 Program.GridTerminalSystem.GetBlocksOfType(_textPanelsDebug, b => b.CustomName.Contains("CruiseDebug"));
@@ -244,6 +247,10 @@ namespace IngameScript
 
                     _gridMass = _cockpits[0].CalculateShipMass().PhysicalMass;
                 }
+                
+                // If we have no target input pannel, we try to get the target from custom data. 
+                if (_textPanelsTargetting.Count == 0)
+                    updateTargetPositionFromCustomData();
 
                 // At least one cockpit and targeting block are required
                 return _cockpits.Count > 0 && _targetingBlock.Count > 0;
@@ -353,6 +360,43 @@ namespace IngameScript
 
                 string[] parts = data.Split(' ');
                 _targetPosition = new Vector3(float.Parse(parts[0]), float.Parse(parts[1]), float.Parse(parts[2]));
+            }
+            
+            public void updateTargetPositionFromRangeFinding()
+            {
+            // Update the targetting position by interfacing with Alastor's code
+            // 
+            // The data should be contained in the text pannel named "CruiseTargettingData"
+            // It is a series of lines of GPS position followed by a distance in km. 
+            // Spurious white space characters are ignored. 
+            // 
+            // Example : 
+            // #1:1087630:131373:1650670:#000000:19.90
+            // #2:1111172:130967:1631037:#000000:20.10
+            // #3:1101042:131107:1648341:#000000:19.94
+            // #4:1105568:145568:1631072:#000000:20.50
+            // #5:1112285:131146:1652285:#000000:30.00
+            // #6:1091072:131072:1648572:#000000:17.50
+            // #7:1109451:134313:1620297:#000000:21.55
+            // 
+            // The target is calculated by this script when launching with action "calculate_target"
+            
+                Trilateration t = new Trilateration();
+                if (_textPanelsTargetting.Count == 0)
+                {
+                    log("No targetting data text panel detected. ");
+                    return;
+                }
+                string text = _textPanelsTargetting.GetText();
+                t.Add(text);
+                if (t.calculateAverageTarget())
+                {
+                    _targetPosition = t.calculatedTarget;
+                    log(String.Format("Target calculated at : {0:F0}, {1:F0}, {2:F0}", target.X, target.Y, target.Z));
+                } else {
+                    _targetPosition = new Vector3();
+                    log("Target calculation failed. Check for insufficiant data points or erroneous data. ");
+                }
             }
 
             public void displayDebugText(string text, bool append = false)
@@ -812,7 +856,219 @@ namespace IngameScript
                 }
             }
         }
-
+        
+        /// Alastor's trilateration code
+        
+        static class Combinations
+        {
+            // Source : https://codereview.stackexchange.com/questions/194967/get-all-combinations-of-selecting-k-elements-from-an-n-sized-array
+            // Enumerate all possible m-size combinations of [0, 1, ..., n-1] array
+            // in lexicographic order (first [0, 1, 2, ..., m-1]).
+            private static IEnumerable<int[]> CombinationsRosettaWoRecursion(int m, int n)
+            {
+                int[] result = new int[m];
+                Stack<int> stack = new Stack<int>(m);
+                stack.Push(0);
+                while (stack.Count > 0)
+                {
+                    int index = stack.Count - 1;
+                    int value = stack.Pop();
+                    while (value < n)
+                    {
+                        result[index++] = value++;
+                        stack.Push(value);
+                        if (index != m) continue;
+                        yield return result;
+                        break;
+                    }
+                }
+            }
+        
+            public static IEnumerable<T[]> getAllCombinations<T>(T[] array, int m)
+            {
+                if (array.Length < m)
+                    throw new ArgumentException("Array length can't be less than number of selected elements");
+                if (m < 1)
+                    throw new ArgumentException("Number of selected elements can't be less than 1");
+                T[] result = new T[m];
+                foreach (int[] j in CombinationsRosettaWoRecursion(m, array.Length))
+                {
+                    for (int i = 0; i < m; i++)
+                    {
+                        result[i] = array[j[i]];
+                    }
+                    yield return (T[])result.Clone(); // thanks to @xanatos
+                    //yield return result;
+                }
+            }
+        }
+        
+        class Matrix33
+        {
+            private double[,] _M = new double[3,3]{{0d,0d,0d},{0d,0d,0d},{0d,0d,0d}};
+            
+            public Matrix33(
+                double M11, double M12, double M13, 
+                double M21, double M22, double M23, 
+                double M31, double M32, double M33
+                )
+            {
+                this._M[0,0] = M11;
+                this._M[0,1] = M12;
+                this._M[0,2] = M13;
+                this._M[1,0] = M21;
+                this._M[1,1] = M22;
+                this._M[1,2] = M23;
+                this._M[2,0] = M31;
+                this._M[2,1] = M32;
+                this._M[2,2] = M33;
+            }
+            
+            public double determinant 
+            {
+                get => this._M[0,0] * (this._M[1,1] * this._M[2,2] - this._M[1,2] * this._M[2,1]) 
+                     - this._M[0,1] * (this._M[1,0] * this._M[2,2] - this._M[1,2] * this._M[2,0]) 
+                     + this._M[0,2] * (this._M[1,0] * this._M[2,1] - this._M[1,1] * this._M[2,0]);
+                
+            }
+        }
+        
+        class Range
+        {
+            private Vector3D _location = new Vector3D();
+            private double _distance = 0;
+            
+            public Range(Vector3D location, double distance)
+            {
+                this._location = location;
+                this._distance = distance;
+            }
+            
+            public Range(double X, double Y, double Z, double distance)
+            {
+                this._location = new Vector3D(X, Y, Z);
+                this._distance = distance;
+            }
+            
+            public Range(string str)
+            { 
+                // Expected string format : "name:X:Y:Z:Color:distance"
+                // with distance in km, X, Y and Z in m
+                string[] substr = str.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                double X = double.Parse(substr[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+                double Y = double.Parse(substr[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+                double Z = double.Parse(substr[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+                double distance = double.Parse(substr[5].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+                this._location = new Vector3D(X, Y, Z);
+                this._distance = distance*1000;
+            }
+            
+            public Vector3D Location {get => this._location;}
+            public double Distance {get => this._distance;}
+        }
+        
+        class Trilateration
+        {
+            private List<Range> _ranges = new List<Range>();
+            private Vector3D _calculatedTarget = new Vector3D();
+            
+            public Vector3D calculatedTarget
+            {
+                get => this._calculatedTarget;
+            }
+            
+            public void Add(Range range)
+            {
+                this._ranges.Add(range);
+            }
+            
+            public void Add(Range[] ranges)
+            {
+                foreach(Range range in ranges)
+                    this.Add(range);
+            }
+            
+            public void Add(string rangesStr)
+            {
+                char[] separators = new char[] {'\n','\r'};
+                foreach (string line in rangesStr.Trim().Split(separators, StringSplitOptions.RemoveEmptyEntries))
+                    this.Add(new Range(line.Trim()));
+            }
+            
+            public void Reset()
+            {
+                this._ranges = new List<Range>();
+                this._calculatedTarget = new Vector3D();
+            }
+            
+            private static Vector3D? calculateSingleTarget(Range rangeA, Range rangeB, Range rangeC, Range rangeD)
+            {
+                Vector3D vectA = rangeA.Location;
+                double D_A = rangeA.Distance;
+                Vector3D vectB = rangeB.Location;
+                double D_B = rangeB.Distance;
+                Vector3D vectC = rangeC.Location;
+                double D_C = rangeC.Distance;
+                Vector3D vectD = rangeD.Location;
+                double D_D = rangeD.Distance;
+                
+                // Calculate intermediate factors
+                Vector3D vectAB = 2*(vectB - vectA);
+                double D_AB = (vectB.LengthSquared - Math.Pow(D_B,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                Vector3D vectAC = 2*(vectC - vectA);
+                double D_AC = (vectC.LengthSquared - Math.Pow(D_C,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                Vector3D vectAD = 2*(vectD - vectA);
+                double D_AD = (vectD.LengthSquared - Math.Pow(D_D,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                
+                // Solve the equation system
+                double D = new Matrix33(vectAB.X, vectAB.Y, vectAB.Z, 
+                                        vectAC.X, vectAC.Y, vectAC.Z, 
+                                        vectAD.X, vectAD.Y, vectAD.Z).determinant;
+                double D_X = new Matrix33(D_AB, vectAB.Y, vectAB.Z, 
+                                          D_AC, vectAC.Y, vectAC.Z, 
+                                          D_AD, vectAD.Y, vectAD.Z).determinant;
+                double D_Y = new Matrix33(vectAB.X, D_AB, vectAB.Z, 
+                                          vectAC.X, D_AC, vectAC.Z, 
+                                          vectAD.X, D_AD, vectAD.Z).determinant;
+                double D_Z = new Matrix33(vectAB.X, vectAB.Y, D_AB, 
+                                          vectAC.X, vectAC.Y, D_AC, 
+                                          vectAD.X, vectAD.Y, D_AD).determinant;
+                
+                // If there is a solution, return it, otherwise, null
+                if (D == 0) return null;
+                return new Vector3D(D_X/D, D_Y/D, D_Z/D);
+            }
+            
+            public bool calculateAverageTarget()
+            {
+                // Check that we have enough data points
+                double dataCount = this._ranges.Count;
+                if (dataCount < 4) return false;
+                
+                List<Vector3D> targets = new List<Vector3D>();
+                Vector3D? target = null;
+                
+                // Iterate over all the combinations of 4 Range points to measure the corresponding target
+                foreach (Range[] c in Combinations.getAllCombinations(this._ranges.ToArray(), 4))
+                {
+                    target = calculateSingleTarget(c[0], c[1], c[2], c[3]);
+                    if (target != null) targets.Add(target.Value); // If we have a solution, store it
+                }
+                
+                // If no combination of data gave a solution, report failure
+                if (targets.Count == 0) return false;
+                
+                // Otherwise, the target is the average of the solutions found
+                this._calculatedTarget = new Vector3D(targets.Average(vect => vect.X),
+                                                      targets.Average(vect => vect.Y),
+                                                      targets.Average(vect => vect.Z));
+                return true;
+            }
+        }
+        
+        
+        /// End of Alastor's trilateration code
+        
 
         StateMachineProgram<MyContext> _impl;
 
@@ -838,6 +1094,11 @@ namespace IngameScript
             {
                 _impl.Context.log("Cruise control disabled");
                 _impl.Context.transition(MyContext.Stopped);
+            }
+            else if (command == "calculate_target")
+            {
+                _impl.Context.log("Target calculation requested");
+                _impl.Context.updateTargetPositionFromRangeFinding();
             }
             else if (command == "debug")
             {
