@@ -387,7 +387,11 @@ namespace IngameScript
                     log("No targetting data text panel detected. ");
                     return;
                 }
-                string text = _textPanelsTargetting.GetText();
+                foreach (IMyTextPanel panel in _textPanelsTargetting)
+                {
+                    string text = panel.GetText();
+                    t.Add(text);
+                }
                 t.Add(text);
                 if (t.calculateAverageTarget())
                 {
