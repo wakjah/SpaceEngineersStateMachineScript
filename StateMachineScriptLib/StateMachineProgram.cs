@@ -43,9 +43,14 @@ namespace IngameScript
 
             public void Main(string argument, UpdateType updateSource)
             {
-                if ((updateSource & (UpdateType.Trigger | UpdateType.Terminal)) != 0)
+                if ((updateSource & (UpdateType.Trigger | UpdateType.Terminal|UpdateType.Script|UpdateType.Mod)) != 0)
                 {
                     trigger(argument);
+                }
+                
+                if( (updateSource & UpdateType.IGC) != 0 & _context != null)
+                {
+                    _context.ProcessIGCMessages()
                 }
 
                 if ((updateSource & (UpdateType.Update100 | UpdateType.Update10 | UpdateType.Update1)) != 0)
