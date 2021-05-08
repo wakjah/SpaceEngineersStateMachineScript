@@ -154,6 +154,12 @@ namespace IngameScript
             }
         }
 
+        enum TargetingMode
+        {
+            Override,
+            Trilateration,
+            None
+        }
 
         class MyContext : Context<MyContext>
         {
@@ -164,7 +170,8 @@ namespace IngameScript
             public List<Gyroscope> _compensatedGyros = new List<Gyroscope>(16);
             public List<IMyTextPanel> _textPanels = new List<IMyTextPanel>(1);
             public List<IMyTextPanel> _textPanelsAux = new List<IMyTextPanel>(1);
-            public List<IMyTextPanel> _textPanelsTargetting = new List<IMyTextPanel>(1);
+            public List<IMyTextPanel> _textPanelsTrilaterationInput = new List<IMyTextPanel>(1);
+            public List<IMyTextPanel> _textPanelsTrilaterationOutput = new List<IMyTextPanel>(1);
             public List<IMyTextPanel> _textPanelsDebug = new List<IMyTextPanel>(1);
             public List<IMyShipController> _cockpits = new List<IMyShipController>(16);
             public List<IMyBatteryBlock> _batteries = new List<IMyBatteryBlock>(16);
@@ -177,7 +184,10 @@ namespace IngameScript
             public NearestPlanet _nearestPlanet = new NearestPlanet();
             public double _lastPitchError_rads = 0;
             public double _lastRollError_rads = 0;
+            private TrilaterationResult _lastTrilaterationResult = TrilaterationResult.NotEnoughPoints; // Initially assume not enough data
+            private Vector3D _targetPositionFromTrilateration = new Vector3D();
             private Vector3D _targetPosition = new Vector3D();
+            public TargetingMode _targetingMode = TargetingMode.None;
             private double _gridMass = 0.0;
 
             public static readonly float ORBIT_SAFETY_MARGIN = 200;
@@ -216,8 +226,11 @@ namespace IngameScript
                 _textPanelsAux.Clear();
                 Program.GridTerminalSystem.GetBlocksOfType(_textPanelsAux, b => b.CustomName.Contains("CruiseAux"));
 
-                _textPanelsTargetting.Clear();
-                Program.GridTerminalSystem.GetBlocksOfType(_textPanelsTargetting, b => b.CustomName.Contains("CruiseTargettingData"));
+                _textPanelsTrilaterationInput.Clear();
+                Program.GridTerminalSystem.GetBlocksOfType(_textPanelsTrilaterationInput, b => b.CustomName.Contains("CruiseTrilaterationInput"));
+
+                _textPanelsTrilaterationOutput.Clear();
+                Program.GridTerminalSystem.GetBlocksOfType(_textPanelsTrilaterationOutput, b => b.CustomName.Contains("CruiseTrilaterationOutput"));
 
                 _textPanelsDebug.Clear();
                 Program.GridTerminalSystem.GetBlocksOfType(_textPanelsDebug, b => b.CustomName.Contains("CruiseDebug"));
@@ -247,16 +260,21 @@ namespace IngameScript
 
                     _gridMass = _cockpits[0].CalculateShipMass().PhysicalMass;
                 }
-                
-                // If we have no target input pannel, we try to get the target from custom data. 
-                if (_textPanelsTargetting.Count == 0)
-                    updateTargetPositionFromCustomData();
+
+                updateTargetPosition();
 
                 // At least one cockpit and targeting block are required
                 return _cockpits.Count > 0 && _targetingBlock.Count > 0;
             }
 
             protected override void updateDisplayImpl()
+            {
+                updateMainDisplayImpl();
+                updateAuxDisplayImpl();
+                updateTrilaterationOutputDisplayImpl();
+            }
+
+            private void updateMainDisplayImpl()
             {
                 _stringBuilder.Clear();
                 _stringBuilder.Append("Orbital Targeting\n");
@@ -269,7 +287,11 @@ namespace IngameScript
                 _stringBuilder.Append("Status:\n  ");
                 if (!FoundAllBlocks)
                 {
-                    _stringBuilder.Append("Unavailable");
+                    _stringBuilder.Append("Unavailable: Missing blocks");
+                }
+                else if (!TargetAcquired)
+                {
+                    _stringBuilder.Append("Unavailable: No target");
                 }
                 else
                 {
@@ -277,12 +299,16 @@ namespace IngameScript
                 }
                 _stringBuilder.Append("\n");
 
+                _stringBuilder.Append("Targeting mode: ");
+                _stringBuilder.Append(_targetingMode.ToString());
+                _stringBuilder.Append("\n");
+
                 _stringBuilder.Append("Nearest planet:\n  ");
                 _stringBuilder.Append(string.Format("{0}", _nearestPlanet.getNearestPlanetName()));
                 _stringBuilder.Append("\n");
 
-                double distanceToPlanetSurface = 
-                    (getTargetingBlockPosition() - _planetPosition).Length() 
+                double distanceToPlanetSurface =
+                    (getTargetingBlockPosition() - _planetPosition).Length()
                     - _nearestPlanet.getNearestPlanetRadius();
                 _stringBuilder.Append(string.Format("Distance to {0}:\n  ", _nearestPlanet.getNearestPlanetName()));
                 _stringBuilder.Append(string.Format("{0:0.00} km", distanceToPlanetSurface / 1000));
@@ -303,16 +329,13 @@ namespace IngameScript
                     panel.ContentType = ContentType.TEXT_AND_IMAGE;
                     panel.WriteText(text);
                 }
+            }
 
-
-
-
+            private void updateAuxDisplayImpl()
+            {
                 _stringBuilder.Clear();
-
-
-
-
                 Vector3D firingPosition = getFiringPosition();
+
                 Vector3D position = getTargetingBlockPosition();
                 Vector3D positionError = position - firingPosition;
                 _stringBuilder.Append("Fire pos:\n");
@@ -321,9 +344,42 @@ namespace IngameScript
                 _stringBuilder.Append("Dist to fire pos:\n");
                 _stringBuilder.Append(string.Format("  X={0:0.0000}\n  Y={1:0.0000}\n  Z={2:0.0000}\n", positionError.X, positionError.Y, positionError.Z));
 
-                text = _stringBuilder.ToString();
-
+                string text = _stringBuilder.ToString();
                 foreach (IMyTextPanel panel in _textPanelsAux)
+                {
+                    panel.ContentType = ContentType.TEXT_AND_IMAGE;
+                    panel.WriteText(text);
+                }
+            }
+
+            private void updateTrilaterationOutputDisplayImpl()
+            {
+                _stringBuilder.Clear();
+                _stringBuilder.Append("Trilateration:\n");
+                _stringBuilder.Append("Status: ");
+                switch (_lastTrilaterationResult)
+                {
+                    case TrilaterationResult.Ok:
+                        _stringBuilder.Append("Success");
+                        break;
+                    case TrilaterationResult.NotEnoughPoints:
+                        _stringBuilder.Append("Not enough data\nPlease take more range measurements.");
+                        break;
+                    case TrilaterationResult.NoSolution:
+                        _stringBuilder.Append("Invalid data: no firing solution found.");
+                        break;
+                }
+                _stringBuilder.Append("\n");
+
+                _stringBuilder.AppendFormat(
+                    "Target calculated at : {0:F0}, {1:F0}, {2:F0}", 
+                    _targetPositionFromTrilateration.X, 
+                    _targetPositionFromTrilateration.Y, 
+                    _targetPositionFromTrilateration.Z
+                );
+
+                string text = _stringBuilder.ToString();
+                foreach (IMyTextPanel panel in _textPanelsTrilaterationOutput)
                 {
                     panel.ContentType = ContentType.TEXT_AND_IMAGE;
                     panel.WriteText(text);
@@ -349,57 +405,91 @@ namespace IngameScript
                 }
             }
 
-            public void updateTargetPositionFromCustomData()
+            public bool TargetAcquired { get { return _targetingMode != TargetingMode.None; } }
+
+            private void updateTargetPosition()
+            {
+                // If we have no target in the custom data, try to get one from trilateration. Otherwise fail
+                if (updateTargetPositionFromCustomData())
+                {
+                    _targetingMode = TargetingMode.Override;
+                }
+                else if (updateTargetPositionFromTrilateration())
+                {
+                    _targetingMode = TargetingMode.Trilateration;
+                }
+                else
+                {
+                    _targetingMode = TargetingMode.None;
+                }
+            }
+
+            public bool updateTargetPositionFromCustomData()
             {
                 string data = Program.Me.CustomData.Trim();
                 if (data.Length == 0)
                 {
                     _targetPosition = new Vector3();
-                    return;
+                    return false;
+                }
+
+                if (data.StartsWith("#"))
+                {
+                    // User requested to ignore the value without clearing custom data
+                    return false;
                 }
 
                 string[] parts = data.Split(' ');
                 _targetPosition = new Vector3(float.Parse(parts[0]), float.Parse(parts[1]), float.Parse(parts[2]));
+
+                return true;
             }
             
-            public void updateTargetPositionFromRangeFinding()
+            public bool updateTargetPositionFromTrilateration()
             {
-            // Update the targetting position by interfacing with Alastor's code
-            // 
-            // The data should be contained in the text pannel named "CruiseTargettingData"
-            // It is a series of lines of GPS position followed by a distance in km. 
-            // Spurious white space characters are ignored. 
-            // 
-            // Example : 
-            // #1:1087630:131373:1650670:#000000:19.90
-            // #2:1111172:130967:1631037:#000000:20.10
-            // #3:1101042:131107:1648341:#000000:19.94
-            // #4:1105568:145568:1631072:#000000:20.50
-            // #5:1112285:131146:1652285:#000000:30.00
-            // #6:1091072:131072:1648572:#000000:17.50
-            // #7:1109451:134313:1620297:#000000:21.55
-            // 
-            // The target is calculated by this script when launching with action "calculate_target"
-            
-                Trilateration t = new Trilateration();
-                if (_textPanelsTargetting.Count == 0)
+                // Update the targetting position by interfacing with Alastor's code
+                // 
+                // The data should be contained in the text pannel named "CruiseTargettingData"
+                // It is a series of lines of GPS position followed by a distance in km. 
+                // Spurious white space characters are ignored. 
+                // 
+                // Example : 
+                // #1:1087630:131373:1650670:#000000:19.90
+                // #2:1111172:130967:1631037:#000000:20.10
+                // #3:1101042:131107:1648341:#000000:19.94
+                // #4:1105568:145568:1631072:#000000:20.50
+                // #5:1112285:131146:1652285:#000000:30.00
+                // #6:1091072:131072:1648572:#000000:17.50
+                // #7:1109451:134313:1620297:#000000:21.55
+                // 
+                // The target is calculated by this script when launching with action "calculate_target"
+
+                Trilateration trilateration = new Trilateration();
+
+                if (_textPanelsTrilaterationInput.Count == 0)
                 {
                     log("No targetting data text panel detected. ");
-                    return;
+                    return false;
                 }
-                foreach (IMyTextPanel panel in _textPanelsTargetting)
+                foreach (IMyTextPanel panel in _textPanelsTrilaterationInput)
                 {
                     string text = panel.GetText();
-                    t.Add(text);
+                    trilateration.Add(text);
                 }
-                if (t.calculateAverageTarget())
+
+                _lastTrilaterationResult = trilateration.calculateAverageTarget();
+                if (_lastTrilaterationResult == TrilaterationResult.Ok)
                 {
-                    _targetPosition = t.calculatedTarget;
-                    log(String.Format("Target calculated at : {0:F0}, {1:F0}, {2:F0}", _targetPosition.X, _targetPosition.Y, _targetPosition.Z));
-                } else {
-                    _targetPosition = new Vector3();
-                    log("Target calculation failed. Check for insufficiant data points or erroneous data. ");
+                    _targetPositionFromTrilateration = trilateration.calculatedTarget;
                 }
+                else
+                {
+                    _targetPositionFromTrilateration = new Vector3D();
+                }
+
+                _targetPosition = _targetPositionFromTrilateration;
+
+                return _lastTrilaterationResult == TrilaterationResult.Ok;
             }
 
             public void displayDebugText(string text, bool append = false)
@@ -577,7 +667,8 @@ namespace IngameScript
             private PidController _vertController = new PidController(P_VERT, I_VERT, D_VERT, IMIN, IMAX);
             private PidController _horzController = new PidController(P_HORZ, I_HORZ, D_HORZ, IMIN, IMAX);
             private PidController _pitchController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
-            private PidController _rollController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
+            //private PidController _rollController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
+            private PidController _yawController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
 
             private float[] _rotationVector = new float[6];
 
@@ -587,9 +678,10 @@ namespace IngameScript
 
             public override void update(MyContext context)
             {
-                if (!context.FoundAllBlocks)
+                if (!context.FoundAllBlocks || !context.TargetAcquired)
                 {
                     context.transition(MyContext.Stopped);
+                    return;
                 }
 
                 TimeSpan timeSinceLast = context.Program.Runtime.TimeSinceLastRun;
@@ -674,21 +766,30 @@ namespace IngameScript
                     pitchControl = 0;
                 }
                 context._lastPitchError_rads = pitchError;
-                
-                Vector3D planetTangentRollDirection = planetTangentDesiredDirection.Cross(context._directionFromPlanetToMe);
+
+                /*Vector3D planetTangentRollDirection = planetTangentDesiredDirection.Cross(context._directionFromPlanetToMe);
                 double rollError = signedAngleBetweenNormalizedVectors(directionRight, planetTangentRollDirection, directionForward);
                 double rollControl = _rollController.update(timeSinceLast, rollError, rollError);
                 if (Math.Abs(rollError) < 1e-5)
                 {
                     rollControl = 0;
                 }
-                context._lastRollError_rads = rollError;
+                context._lastRollError_rads = rollError;*/
+
+                double yawError = signedAngleBetweenNormalizedVectors(directionForward, desiredGyroDirection, directionUp);
+                double yawControl = _yawController.update(timeSinceLast, yawError, yawError);
+                if (Math.Abs(yawError) < 1e-5)
+                {
+                    yawControl = 0;
+                }
+                // TODO rename
+                context._lastRollError_rads = yawError;
 
                 float gyroPower = 1;
-                if (Math.Abs(pitchError) < 1e-2 && Math.Abs(rollError) < 1e-2)
+                if (Math.Abs(pitchError) < 1e-2 && Math.Abs(yawError) < 1e-2)
                 {
                     pitchControl *= 2;
-                    rollControl *= 2;
+                    yawControl *= 2;
                     gyroPower = 0.1f;
                 }
 
@@ -708,12 +809,14 @@ namespace IngameScript
                     case CruiseDebug.Pitch:
                         displayController(context, _pitchController, "Pitch");
                         break;
-                    case CruiseDebug.Roll:
+                    /*case CruiseDebug.Roll:
                         displayController(context, _rollController, "Roll");
-                        break;
+                        break;*/
+                        // todo yaw debug
                 }
 
-                float yaw = context._cockpits[0].RotationIndicator.Y / 30;
+                //float yaw = context._cockpits[0].RotationIndicator.Y / 30;
+                float roll = context._cockpits[0].RollIndicator;
 
                 Vector3 moveIndicator = context._cockpits[0].MoveIndicator;
                 float moveVert = moveIndicator.Y;
@@ -740,8 +843,8 @@ namespace IngameScript
 
                 // Divide by 2 because it goes -180 to 180 instead of -90 to 90
                 _rotationVector[0] = (float)pitchControl;
-                _rotationVector[1] = yaw;
-                _rotationVector[2] = (float)-rollControl / 2;
+                _rotationVector[1] = (float)yawControl;
+                _rotationVector[2] = (float)roll;//-rollControl / 2;
                 _rotationVector[3] = -_rotationVector[0];
                 _rotationVector[4] = -_rotationVector[1];
                 _rotationVector[5] = -_rotationVector[2];
@@ -830,7 +933,8 @@ namespace IngameScript
                 _vertController.reset();
                 _horzController.reset();
                 _pitchController.reset();
-                _rollController.reset();
+                //_rollController.reset();
+                _yawController.reset();
 
                 Vector3D gridPosition = context.getTargetingBlockPosition();
                 context._nearestPlanet.update(gridPosition, new TimeSpan(), true);
@@ -972,11 +1076,18 @@ namespace IngameScript
             public double Distance { get { return this._distance; } }
         }
         
+        enum TrilaterationResult
+        {
+            Ok,
+            NotEnoughPoints,
+            NoSolution, // Is there a physical scenario in which there is no solution, or would it just be poor numerical conditions that cause this?
+        }
+
         class Trilateration
         {
             private List<Range> _ranges = new List<Range>();
             private Vector3D _calculatedTarget = new Vector3D();
-            
+
             public Vector3D calculatedTarget
             {
                 get { return this._calculatedTarget; }
@@ -1002,8 +1113,8 @@ namespace IngameScript
             
             public void Reset()
             {
-                this._ranges = new List<Range>();
-                this._calculatedTarget = new Vector3D();
+                _ranges = new List<Range>();
+                _calculatedTarget = new Vector3D();
             }
             
             private static Vector3D? calculateSingleTarget(Range rangeA, Range rangeB, Range rangeC, Range rangeD)
@@ -1044,11 +1155,14 @@ namespace IngameScript
                 return new Vector3D(D_X/D, D_Y/D, D_Z/D);
             }
             
-            public bool calculateAverageTarget()
+            public TrilaterationResult calculateAverageTarget()
             {
                 // Check that we have enough data points
                 double dataCount = this._ranges.Count;
-                if (dataCount < 4) return false;
+                if (dataCount < 4)
+                {
+                    return TrilaterationResult.NotEnoughPoints;
+                }
                 
                 List<Vector3D> targets = new List<Vector3D>();
                 Vector3D? target = null;
@@ -1059,15 +1173,18 @@ namespace IngameScript
                     target = calculateSingleTarget(c[0], c[1], c[2], c[3]);
                     if (target != null) targets.Add(target.Value); // If we have a solution, store it
                 }
-                
+
                 // If no combination of data gave a solution, report failure
-                if (targets.Count == 0) return false;
+                if (targets.Count == 0)
+                {
+                    return TrilaterationResult.NoSolution;
+                }
                 
                 // Otherwise, the target is the average of the solutions found
                 this._calculatedTarget = new Vector3D(targets.Average(vect => vect.X),
                                                       targets.Average(vect => vect.Y),
                                                       targets.Average(vect => vect.Z));
-                return true;
+                return TrilaterationResult.Ok;
             }
         }
         
@@ -1103,7 +1220,7 @@ namespace IngameScript
             else if (command == "calculate_target")
             {
                 _impl.Context.log("Target calculation requested");
-                _impl.Context.updateTargetPositionFromRangeFinding();
+                _impl.Context.updateTargetPositionFromTrilateration();
             }
             else if (command == "debug")
             {
