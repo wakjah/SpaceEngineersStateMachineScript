@@ -47,6 +47,7 @@ namespace IngameScript
             Vertical,
             Pitch,
             Roll,
+            Yaw,
             CustomTest
         }
 
@@ -183,7 +184,7 @@ namespace IngameScript
             private StringBuilder _stringBuilder = new StringBuilder();
             public NearestPlanet _nearestPlanet = new NearestPlanet();
             public double _lastPitchError_rads = 0;
-            public double _lastRollError_rads = 0;
+            public double _lastYawError_rads = 0;
             private TrilaterationResult _lastTrilaterationResult = TrilaterationResult.NotEnoughPoints; // Initially assume not enough data
             private Vector3D _targetPositionFromTrilateration = new Vector3D();
             private Vector3D _targetPosition = new Vector3D();
@@ -314,11 +315,11 @@ namespace IngameScript
                 _stringBuilder.Append(string.Format("{0:0.00} km", distanceToPlanetSurface / 1000));
                 _stringBuilder.Append("\n");
 
-                _stringBuilder.Append(string.Format("Error:\n  pitch={0:0.00} deg\n  roll={1:0.00} deg", _lastPitchError_rads * 180 / Math.PI, _lastRollError_rads * 180 / Math.PI));
+                _stringBuilder.Append(string.Format("Error:\n  pitch={0:0.00} deg\n  yaw={1:0.00} deg", _lastPitchError_rads * 180 / Math.PI, _lastYawError_rads * 180 / Math.PI));
                 _stringBuilder.Append("\n");
 
                 double errorX = distanceToPlanetSurface * Math.Sin(_lastPitchError_rads);
-                double errorY = distanceToPlanetSurface * Math.Sin(_lastRollError_rads);
+                double errorY = distanceToPlanetSurface * Math.Sin(_lastYawError_rads);
                 double errorAbs = Math.Sqrt(errorX * errorX + errorY * errorY);
                 _stringBuilder.Append(string.Format("Accuracy:\n  +/- {0:0.00} m", errorAbs));
 
@@ -631,17 +632,11 @@ namespace IngameScript
             private static double IMIN = -0.25;
             private static double IMAX = 0.25;
 
-            //private static double P_FWD = 10;
-            //// We can't use integral control on this one because it's unable to 
-            //// overshoot, meaning the integrator will just get stuck at the max
-            //private static double I_FWD = 0.00;
-            //private static double D_FWD = 0.2;
             private static double P_FWD = 10;
             // We can't use integral control on this one because it's unable to 
             // overshoot, meaning the integrator will just get stuck at the max
             private static double I_FWD = 0.0;
             private static double D_FWD = -1;
-            //private static double D_FWD = 0;
 
             private static double P_VERT = P_FWD;
             private static double I_VERT = I_FWD;
@@ -650,12 +645,6 @@ namespace IngameScript
             private static double P_HORZ = P_FWD;
             private static double I_HORZ = I_FWD;
             private static double D_HORZ = D_FWD;
-
-            //private static double P_GYRO = 4;
-            //private static double I_GYRO = 0.01;
-            //private static double D_GYRO = 0.02;
-            //private static double IMIN_GYRO = -1;
-            //private static double IMAX_GYRO = 1;
 
             private static double P_GYRO = 4;
             private static double I_GYRO = 0.01;
@@ -667,7 +656,6 @@ namespace IngameScript
             private PidController _vertController = new PidController(P_VERT, I_VERT, D_VERT, IMIN, IMAX);
             private PidController _horzController = new PidController(P_HORZ, I_HORZ, D_HORZ, IMIN, IMAX);
             private PidController _pitchController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
-            //private PidController _rollController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
             private PidController _yawController = new PidController(P_GYRO, I_GYRO, D_GYRO, IMIN_GYRO, IMAX_GYRO);
 
             private float[] _rotationVector = new float[6];
@@ -693,22 +681,9 @@ namespace IngameScript
 
                 Vector3D v = context._velocityTracker.Velocity;
 
-                // Project direction vector onto plane tangent to current position on planet
-                /*Vector3D planetTangentDesiredDirection = directionForward - directionForward.Dot(context._directionFromPlanetToMe) * context._directionFromPlanetToMe;
-                // todo check that desired direction norm is within some bounds
-                // otherwise this projection could be numerically unstable because
-                // e.g. the nose is pointing straight down
-                planetTangentDesiredDirection.Normalize();
-
-                Vector3D desiredDirection = planetTangentDesiredDirection;
-                Vector3D desiredGyroDirection = planetTangentDesiredDirection;*/
-
                 Vector3D desiredGyroDirection = -context._directionFromPlanetToMe;
-                Vector3D planetTangentDesiredDirection = desiredGyroDirection; // planet tangent compensation not relevant here
 
                 Vector3D position = context.getTargetingBlockPosition();
-                //Vector3D desiredV = desiredDirection * desiredSpeed;
-                //Vector3D desiredPositionDueToVelocity = _lastPosition + desiredV * timeSinceLast.TotalSeconds;
                 Vector3D firingPosition = context.getFiringPosition();
                 Vector3D positionErrorDirection = firingPosition - position;
                 double errorMagnitude = positionErrorDirection.Normalize();
@@ -767,23 +742,13 @@ namespace IngameScript
                 }
                 context._lastPitchError_rads = pitchError;
 
-                /*Vector3D planetTangentRollDirection = planetTangentDesiredDirection.Cross(context._directionFromPlanetToMe);
-                double rollError = signedAngleBetweenNormalizedVectors(directionRight, planetTangentRollDirection, directionForward);
-                double rollControl = _rollController.update(timeSinceLast, rollError, rollError);
-                if (Math.Abs(rollError) < 1e-5)
-                {
-                    rollControl = 0;
-                }
-                context._lastRollError_rads = rollError;*/
-
                 double yawError = signedAngleBetweenNormalizedVectors(directionForward, desiredGyroDirection, directionUp);
                 double yawControl = _yawController.update(timeSinceLast, yawError, yawError);
                 if (Math.Abs(yawError) < 1e-5)
                 {
                     yawControl = 0;
                 }
-                // TODO rename
-                context._lastRollError_rads = yawError;
+                context._lastYawError_rads = yawError;
 
                 float gyroPower = 1;
                 if (Math.Abs(pitchError) < 1e-2 && Math.Abs(yawError) < 1e-2)
@@ -809,13 +774,14 @@ namespace IngameScript
                     case CruiseDebug.Pitch:
                         displayController(context, _pitchController, "Pitch");
                         break;
-                    /*case CruiseDebug.Roll:
-                        displayController(context, _rollController, "Roll");
-                        break;*/
-                        // todo yaw debug
+                    case CruiseDebug.Roll:
+                        //displayController(context, _rollController, "Roll");
+                        break;
+                    case CruiseDebug.Yaw:
+                        displayController(context, _yawController, "Yaw");
+                        break;
                 }
 
-                //float yaw = context._cockpits[0].RotationIndicator.Y / 30;
                 float roll = context._cockpits[0].RollIndicator;
 
                 Vector3 moveIndicator = context._cockpits[0].MoveIndicator;
@@ -844,7 +810,7 @@ namespace IngameScript
                 // Divide by 2 because it goes -180 to 180 instead of -90 to 90
                 _rotationVector[0] = (float)pitchControl;
                 _rotationVector[1] = (float)yawControl;
-                _rotationVector[2] = (float)roll;//-rollControl / 2;
+                _rotationVector[2] = roll;
                 _rotationVector[3] = -_rotationVector[0];
                 _rotationVector[4] = -_rotationVector[1];
                 _rotationVector[5] = -_rotationVector[2];
