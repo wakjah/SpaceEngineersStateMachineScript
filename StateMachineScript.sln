@@ -41,6 +41,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WakStateMachineTestScript",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GravityGyroController", "GravityGyroController\GravityGyroController.csproj", "{E873D73B-2613-43D7-B3FB-9A3C12F17364}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DryDockPrinter", "DryDockPrinter\DryDockPrinter.csproj", "{9F41719D-8E1D-4E30-9D9A-C38CA413CFE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningStationAutoShutdown", "MiningStationAutoShutdown\MiningStationAutoShutdown.csproj", "{817E4242-3C45-45A5-9615-7AC5FD94492C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurnOnWelders", "TurnOnWelders\TurnOnWelders.csproj", "{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FillWeldersWithUsefulItems", "FillWeldersWithUsefulItems\FillWeldersWithUsefulItems.csproj", "{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{1e2e4ba8-9807-4414-a62e-c7c9c6b5e68e}*SharedItemsImports = 4
@@ -48,9 +56,12 @@ Global
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{27e338ad-b54c-4a2a-a671-97515bafc8c7}*SharedItemsImports = 13
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{4e681a11-914d-4564-82e4-3d82dc3a9dd7}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{71654352-1bd3-4747-8745-30b27087f1af}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{7ce6afcb-a81b-4141-bd5a-5a2e61a9db98}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{817e4242-3c45-45a5-9615-7ac5fd94492c}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{831a17a7-cc26-474f-9c08-37d74bc1923c}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{8bc9f458-7f08-4d62-b671-83dfa08b2702}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{9a78c8af-829a-4b17-8a69-066965ec401a}*SharedItemsImports = 4
+		StateMachineScriptLib\StateMachineScriptLib.projitems*{9f41719d-8e1d-4e30-9d9a-c38ca413cfe5}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{a0dc77cd-6876-4f0a-9cff-d2ebf1562160}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{acdc3baf-1eea-485b-a209-d14a85c2a22b}*SharedItemsImports = 4
 		StateMachineScriptLib\StateMachineScriptLib.projitems*{be261820-9d9e-4030-9886-00183694c477}*SharedItemsImports = 4
@@ -100,6 +111,14 @@ Global
 		{BE261820-9D9E-4030-9886-00183694C477}.Debug|x64.Build.0 = Debug|x64
 		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.ActiveCfg = Debug|x64
 		{E873D73B-2613-43D7-B3FB-9A3C12F17364}.Debug|x64.Build.0 = Debug|x64
+		{9F41719D-8E1D-4E30-9D9A-C38CA413CFE5}.Debug|x64.ActiveCfg = Debug|x64
+		{9F41719D-8E1D-4E30-9D9A-C38CA413CFE5}.Debug|x64.Build.0 = Debug|x64
+		{817E4242-3C45-45A5-9615-7AC5FD94492C}.Debug|x64.ActiveCfg = Debug|x64
+		{817E4242-3C45-45A5-9615-7AC5FD94492C}.Debug|x64.Build.0 = Debug|x64
+		{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}.Debug|x64.ActiveCfg = Debug|x64
+		{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}.Debug|x64.Build.0 = Debug|x64
+		{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}.Debug|x64.ActiveCfg = Debug|x64
+		{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
