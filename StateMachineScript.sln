@@ -45,8 +45,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DryDockPrinter", "DryDockPr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiningStationAutoShutdown", "MiningStationAutoShutdown\MiningStationAutoShutdown.csproj", "{817E4242-3C45-45A5-9615-7AC5FD94492C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurnOnWelders", "TurnOnWelders\TurnOnWelders.csproj", "{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FillWeldersWithUsefulItems", "FillWeldersWithUsefulItems\FillWeldersWithUsefulItems.csproj", "{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}"
 EndProject
 Global
@@ -115,8 +113,6 @@ Global
 		{9F41719D-8E1D-4E30-9D9A-C38CA413CFE5}.Debug|x64.Build.0 = Debug|x64
 		{817E4242-3C45-45A5-9615-7AC5FD94492C}.Debug|x64.ActiveCfg = Debug|x64
 		{817E4242-3C45-45A5-9615-7AC5FD94492C}.Debug|x64.Build.0 = Debug|x64
-		{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}.Debug|x64.ActiveCfg = Debug|x64
-		{F5EDA1F0-59B7-4A06-A62B-194DE36EA9A2}.Debug|x64.Build.0 = Debug|x64
 		{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}.Debug|x64.ActiveCfg = Debug|x64
 		{7CE6AFCB-A81B-4141-BD5A-5A2E61A9DB98}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
