@@ -372,10 +372,11 @@ namespace IngameScript
                 }
                 _stringBuilder.Append("\n");
 
+
                 _stringBuilder.AppendFormat(
-                    "Target calculated at : {0:F0}, {1:F0}, {2:F0}", 
-                    _targetPositionFromTrilateration.X, 
-                    _targetPositionFromTrilateration.Y, 
+                    "  X={0:0.0000}\n  Y={1:0.0000}\n  Z={2:0.0000}\n",
+                    _targetPositionFromTrilateration.X,
+                    _targetPositionFromTrilateration.Y,
                     _targetPositionFromTrilateration.Z
                 );
 
