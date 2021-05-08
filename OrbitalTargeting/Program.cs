@@ -392,11 +392,10 @@ namespace IngameScript
                     string text = panel.GetText();
                     t.Add(text);
                 }
-                t.Add(text);
                 if (t.calculateAverageTarget())
                 {
                     _targetPosition = t.calculatedTarget;
-                    log(String.Format("Target calculated at : {0:F0}, {1:F0}, {2:F0}", target.X, target.Y, target.Z));
+                    log(String.Format("Target calculated at : {0:F0}, {1:F0}, {2:F0}", _targetPosition.X, _targetPosition.Y, _targetPosition.Z));
                 } else {
                     _targetPosition = new Vector3();
                     log("Target calculation failed. Check for insufficiant data points or erroneous data. ");
@@ -930,9 +929,11 @@ namespace IngameScript
             
             public double determinant 
             {
-                get => this._M[0,0] * (this._M[1,1] * this._M[2,2] - this._M[1,2] * this._M[2,1]) 
-                     - this._M[0,1] * (this._M[1,0] * this._M[2,2] - this._M[1,2] * this._M[2,0]) 
-                     + this._M[0,2] * (this._M[1,0] * this._M[2,1] - this._M[1,1] * this._M[2,0]);
+                get {
+                    return this._M[0, 0] * (this._M[1, 1] * this._M[2, 2] - this._M[1, 2] * this._M[2, 1])
+                         - this._M[0, 1] * (this._M[1, 0] * this._M[2, 2] - this._M[1, 2] * this._M[2, 0])
+                         + this._M[0, 2] * (this._M[1, 0] * this._M[2, 1] - this._M[1, 1] * this._M[2, 0]);
+                }
                 
             }
         }
@@ -958,7 +959,7 @@ namespace IngameScript
             { 
                 // Expected string format : "name:X:Y:Z:Color:distance"
                 // with distance in km, X, Y and Z in m
-                string[] substr = str.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                string[] substr = str.Split(':');
                 double X = double.Parse(substr[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
                 double Y = double.Parse(substr[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
                 double Z = double.Parse(substr[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
@@ -967,8 +968,8 @@ namespace IngameScript
                 this._distance = distance*1000;
             }
             
-            public Vector3D Location {get => this._location;}
-            public double Distance {get => this._distance;}
+            public Vector3D Location { get { return this._location; } }
+            public double Distance { get { return this._distance; } }
         }
         
         class Trilateration
@@ -978,7 +979,7 @@ namespace IngameScript
             
             public Vector3D calculatedTarget
             {
-                get => this._calculatedTarget;
+                get { return this._calculatedTarget; }
             }
             
             public void Add(Range range)
@@ -1018,11 +1019,11 @@ namespace IngameScript
                 
                 // Calculate intermediate factors
                 Vector3D vectAB = 2*(vectB - vectA);
-                double D_AB = (vectB.LengthSquared - Math.Pow(D_B,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                double D_AB = (vectB.LengthSquared() - Math.Pow(D_B,2)) - (vectA.LengthSquared() - Math.Pow(D_A,2));
                 Vector3D vectAC = 2*(vectC - vectA);
-                double D_AC = (vectC.LengthSquared - Math.Pow(D_C,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                double D_AC = (vectC.LengthSquared() - Math.Pow(D_C,2)) - (vectA.LengthSquared() - Math.Pow(D_A,2));
                 Vector3D vectAD = 2*(vectD - vectA);
-                double D_AD = (vectD.LengthSquared - Math.Pow(D_D,2)) - (vectA.LengthSquared - Math.Pow(D_A,2));
+                double D_AD = (vectD.LengthSquared() - Math.Pow(D_D,2)) - (vectA.LengthSquared() - Math.Pow(D_A,2));
                 
                 // Solve the equation system
                 double D = new Matrix33(vectAB.X, vectAB.Y, vectAB.Z, 
