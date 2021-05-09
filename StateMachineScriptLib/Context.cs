@@ -17,6 +17,9 @@ namespace IngameScript
             public State<ContextImpl> State { get { return _state; } }
             private bool _initialised = false;
             private State<ContextImpl> _initialState;
+            
+            private IMyUnicastListener _unicastListener;
+            private List<IMyBroadcastListener> _broadcastListeners = new List<IMyBroadcastListener>();
 
             public Context(StateMachineProgram<ContextImpl> program, Options options, State<ContextImpl> initial)
             {
@@ -25,6 +28,8 @@ namespace IngameScript
                 Options = options;
 
                 loadOptions();
+                
+                registerUnicastListener()
 
                 // For initialisation, update on next tick
                 program.Program.Runtime.UpdateFrequency = UpdateFrequency.Update1;
@@ -54,6 +59,46 @@ namespace IngameScript
                     _state.enter((ContextImpl)this);
                 }
             }
+            
+            public void registerUnicastListener()
+            {
+                _unicastListener = gridProgram.IGC.UnicastListener;
+                _unicastListener.SetMessageCallback();
+            }
+            
+            public void registerBroadcastListener(string Tag)
+            {
+                IMyBroadcastListener broadcastChannel = gridProgram.IGC.RegisterBroadcastListener(Tag);
+                broadcastChannel.SetMessageCallback(Tag); // What it will run the PB with once it has a message
+                // add to list of channels to check
+                _broadcastListeners.Add(_PublicChannel);
+            }
+            
+            public void ProcessIGCMessages()
+            {
+                // Process broadcast messages
+                foreach (var listener in _broadcastListeners)
+                {
+                    while (listener.HasPendingMessage) // Process all pending messages
+                    {
+                        MyIGCMessage msg = listener.AcceptMessage();
+                        IGCHandler(msg, true);
+                    }
+                }
+                
+                // Process unicast messages
+                if (_unicastListener != null)
+                {
+                    while(_unicastListener.HasPendingMessage)// Process all pending messages
+                    {
+                        MyIGCMessage msg = _unicastListener.AcceptMessage();
+                        IGCHandler(msg, false);
+                    }
+                }
+
+            }
+            
+            protected abstract void IGCHandler(MyIGCMessage message, bool isBroadcast);
 
             public void log(string msg)
             {

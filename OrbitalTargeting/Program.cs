@@ -197,6 +197,19 @@ namespace IngameScript
             {
 
             }
+			
+			protected override void IGCHandler(MyIGCMessage message, bool isBroadcast)
+			{
+				string tag = message.Tag;
+				if (tag == "AddRange")
+				{
+					addRangeFindingData(message.Data)
+				}
+				else if (tag == "ResetRange")
+				{
+					resetRangeFindingData()
+				}
+			}
 
             private void updatePlanetInfo(TimeSpan timeSinceLastUpdate)
             {
@@ -493,6 +506,32 @@ namespace IngameScript
 
                 return _lastTrilaterationResult == TrilaterationResult.Ok;
             }
+			
+            public void addRangeFindingData(string data)
+			{
+				// Clear the range data from _textPanelsTargetting
+                if (_textPanelsTargetting.Count == 0)
+                {
+                    log("No targetting data text panel detected. ");
+                    return;
+                }
+                IMyTextPanel panel = _textPanelsTargetting[0]
+                panel.WriteText(data, true);
+			}
+			
+            public void resetRangeFindingData()
+			{
+				// Clear the range data from _textPanelsTargetting
+                if (_textPanelsTargetting.Count == 0)
+                {
+                    log("No targetting data text panel detected. ");
+                    return;
+                }
+                foreach (IMyTextPanel panel in _textPanelsTargetting)
+                {
+                    panel.WriteText("", false);
+                }
+			}
 
             public void displayDebugText(string text, bool append = false)
             {
