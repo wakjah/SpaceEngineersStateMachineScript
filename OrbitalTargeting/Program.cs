@@ -187,6 +187,8 @@ namespace IngameScript
             public double _lastYawError_rads = 0;
             private TrilaterationResult _lastTrilaterationResult = TrilaterationResult.NotEnoughPoints; // Initially assume not enough data
             private Vector3D _targetPositionFromTrilateration = new Vector3D();
+            private double _targetHorzErrorFromTrilateration = 0.0;
+            private double _targetVertErrorFromTrilateration = 0.0;
             private Vector3D _targetPosition = new Vector3D();
             public TargetingMode _targetingMode = TargetingMode.None;
             private double _gridMass = 0.0;
@@ -379,6 +381,12 @@ namespace IngameScript
                     _targetPositionFromTrilateration.Y,
                     _targetPositionFromTrilateration.Z
                 );
+                _stringBuilder.Append("Error estimate : \n");
+                _stringBuilder.AppendFormat(
+                    "  Horizontal={0:0.0000}\n  Vertical={1:0.0000}\n",
+                    _targetHorzErrorFromTrilateration,
+                    _targetVertErrorFromTrilateration
+                );
 
                 string text = _stringBuilder.ToString();
                 foreach (IMyTextPanel panel in _textPanelsTrilaterationOutput)
@@ -467,6 +475,8 @@ namespace IngameScript
                 // The target is calculated by this script when launching with action "calculate_target"
 
                 Trilateration trilateration = new Trilateration();
+                // We need the planet to calculate the error estimate in horizontal/vertical
+                trilateration.setPlanet(_planetPosition);
 
                 if (_textPanelsTrilaterationInput.Count == 0)
                 {
@@ -483,10 +493,14 @@ namespace IngameScript
                 if (_lastTrilaterationResult == TrilaterationResult.Ok)
                 {
                     _targetPositionFromTrilateration = trilateration.calculatedTarget;
+                    _targetHorzErrorFromTrilateration = trilateration.horizontalError;
+                    _targetVertErrorFromTrilateration = trilateration.verticalError;
                 }
                 else
                 {
                     _targetPositionFromTrilateration = new Vector3D();
+                    _targetHorzErrorFromTrilateration = 0.0;
+                    _targetVertErrorFromTrilateration = 0.0;
                 }
 
                 _targetPosition = _targetPositionFromTrilateration;
@@ -987,23 +1001,23 @@ namespace IngameScript
                 double M31, double M32, double M33
                 )
             {
-                this._M[0,0] = M11;
-                this._M[0,1] = M12;
-                this._M[0,2] = M13;
-                this._M[1,0] = M21;
-                this._M[1,1] = M22;
-                this._M[1,2] = M23;
-                this._M[2,0] = M31;
-                this._M[2,1] = M32;
-                this._M[2,2] = M33;
+                _M[0,0] = M11;
+                _M[0,1] = M12;
+                _M[0,2] = M13;
+                _M[1,0] = M21;
+                _M[1,1] = M22;
+                _M[1,2] = M23;
+                _M[2,0] = M31;
+                _M[2,1] = M32;
+                _M[2,2] = M33;
             }
             
             public double determinant 
             {
                 get {
-                    return this._M[0, 0] * (this._M[1, 1] * this._M[2, 2] - this._M[1, 2] * this._M[2, 1])
-                         - this._M[0, 1] * (this._M[1, 0] * this._M[2, 2] - this._M[1, 2] * this._M[2, 0])
-                         + this._M[0, 2] * (this._M[1, 0] * this._M[2, 1] - this._M[1, 1] * this._M[2, 0]);
+                    return _M[0, 0] * (_M[1, 1] * _M[2, 2] - _M[1, 2] * _M[2, 1])
+                         - _M[0, 1] * (_M[1, 0] * _M[2, 2] - _M[1, 2] * _M[2, 0])
+                         + _M[0, 2] * (_M[1, 0] * _M[2, 1] - _M[1, 1] * _M[2, 0]);
                 }
                 
             }
@@ -1016,14 +1030,14 @@ namespace IngameScript
             
             public Range(Vector3D location, double distance)
             {
-                this._location = location;
-                this._distance = distance;
+                _location = location;
+                _distance = distance;
             }
             
             public Range(double X, double Y, double Z, double distance)
             {
-                this._location = new Vector3D(X, Y, Z);
-                this._distance = distance;
+                _location = new Vector3D(X, Y, Z);
+                _distance = distance;
             }
             
             public Range(string str)
@@ -1035,34 +1049,47 @@ namespace IngameScript
                 double Y = double.Parse(substr[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
                 double Z = double.Parse(substr[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
                 double distance = double.Parse(substr[5].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-                this._location = new Vector3D(X, Y, Z);
-                this._distance = distance*1000;
+                _location = new Vector3D(X, Y, Z);
+                _distance = distance*1000;
             }
             
-            public Vector3D Location { get { return this._location; } }
-            public double Distance { get { return this._distance; } }
+            public Vector3D Location { get { return _location; } }
+            public double Distance { get { return _distance; } }
         }
         
         enum TrilaterationResult
         {
             Ok,
             NotEnoughPoints,
-            NoSolution, // Is there a physical scenario in which there is no solution, or would it just be poor numerical conditions that cause this?
+            NoSolution, // Caused by poorly chosen measurements
         }
 
         class Trilateration
         {
             private List<Range> _ranges = new List<Range>();
             private Vector3D _calculatedTarget = new Vector3D();
+            private double _epsilonHorz = 0;
+            private double _epsilonVert = 0;
+            private Vector3D _planet = new Vector3D();
 
             public Vector3D calculatedTarget
             {
-                get { return this._calculatedTarget; }
+                get { return _calculatedTarget; }
+            }
+            
+            public double horizontalError
+            {
+                get { return _epsilonHorz; }
+            }
+            
+            public double verticalError
+            {
+                get { return _epsilonVert; }
             }
             
             public void Add(Range range)
             {
-                this._ranges.Add(range);
+                _ranges.Add(range);
             }
             
             public void Add(Range[] ranges)
@@ -1077,14 +1104,33 @@ namespace IngameScript
                 foreach (string line in rangesStr.Trim().Split(separators, StringSplitOptions.RemoveEmptyEntries))
                     this.Add(new Range(line.Trim()));
             }
+        
+            public void setPlanet(Vector3D planet)
+            {
+                _planet = planet;
+            }
             
             public void Reset()
             {
                 _ranges = new List<Range>();
                 _calculatedTarget = new Vector3D();
+                _epsilonHorz = 0;
+                _epsilonVert = 0;
             }
             
-            private static Vector3D? calculateSingleTarget(Range rangeA, Range rangeB, Range rangeC, Range rangeD)
+            double Median(double[] xs) {
+                double[] ys = (double[])xs.Clone();
+                Array.Sort(ys);
+                double mid = (ys.GetLength(0) - 1) / 2.0;
+                return (ys[(int)(mid)] + ys[(int)(mid + 0.5)]) / 2;
+            }
+            
+            private static double errorCoefficient(double D_x, double D, double delta, double d) 
+            {
+                return Math.Max(Math.Abs( 2*D_x/D*delta*(d-delta)), Math.Abs(-2*D_x/D*delta*(d+delta)));
+            }
+            
+            private Tuple<Vector3D,double,double>? calculateSingleTarget(Range rangeA, Range rangeB, Range rangeC, Range rangeD)
             {
                 Vector3D vectA = rangeA.Location;
                 double D_A = rangeA.Distance;
@@ -1107,23 +1153,81 @@ namespace IngameScript
                 double D = new Matrix33(vectAB.X, vectAB.Y, vectAB.Z, 
                                         vectAC.X, vectAC.Y, vectAC.Z, 
                                         vectAD.X, vectAD.Y, vectAD.Z).determinant;
-                double D_X = new Matrix33(D_AB, vectAB.Y, vectAB.Z, 
-                                          D_AC, vectAC.Y, vectAC.Z, 
-                                          D_AD, vectAD.Y, vectAD.Z).determinant;
-                double D_Y = new Matrix33(vectAB.X, D_AB, vectAB.Z, 
-                                          vectAC.X, D_AC, vectAC.Z, 
-                                          vectAD.X, D_AD, vectAD.Z).determinant;
-                double D_Z = new Matrix33(vectAB.X, vectAB.Y, D_AB, 
-                                          vectAC.X, vectAC.Y, D_AC, 
-                                          vectAD.X, vectAD.Y, D_AD).determinant;
+                double D_BX = new Matrix33(1, vectAB.Y, vectAB.Z, 
+                                           0, vectAC.Y, vectAC.Z, 
+                                           0, vectAD.Y, vectAD.Z).determinant;
+                double D_CX = new Matrix33(0, vectAB.Y, vectAB.Z, 
+                                           1, vectAC.Y, vectAC.Z, 
+                                           0, vectAD.Y, vectAD.Z).determinant;
+                double D_DX = new Matrix33(0, vectAB.Y, vectAB.Z, 
+                                           0, vectAC.Y, vectAC.Z, 
+                                           1, vectAD.Y, vectAD.Z).determinant;
+                double D_AX = D_BX + D_CX + D_DX;
+                double D_X  = D_AB*D_BX + D_AC*D_CX + D_AD*D_DX;
+                double D_BY = new Matrix33(vectAB.X, 1, vectAB.Z, 
+                                           vectAC.X, 0, vectAC.Z, 
+                                           vectAD.X, 0, vectAD.Z).determinant;
+                double D_CY = new Matrix33(vectAB.X, 0, vectAB.Z, 
+                                           vectAC.X, 1, vectAC.Z, 
+                                           vectAD.X, 0, vectAD.Z).determinant;
+                double D_DY = new Matrix33(vectAB.X, 0, vectAB.Z, 
+                                           vectAC.X, 0, vectAC.Z, 
+                                           vectAD.X, 1, vectAD.Z).determinant;
+                double D_AY = D_BY + D_CY + D_DY;
+                double D_Y  = D_AB*D_BY + D_AC*D_CY + D_AD*D_DY;
+                double D_BZ = new Matrix33(vectAB.X, vectAB.Y, 1, 
+                                           vectAC.X, vectAC.Y, 0, 
+                                           vectAD.X, vectAD.Y, 0).determinant;
+                double D_CZ = new Matrix33(vectAB.X, vectAB.Y, 0, 
+                                           vectAC.X, vectAC.Y, 1, 
+                                           vectAD.X, vectAD.Y, 0).determinant;
+                double D_DZ = new Matrix33(vectAB.X, vectAB.Y, 0, 
+                                           vectAC.X, vectAC.Y, 0, 
+                                           vectAD.X, vectAD.Y, 1).determinant;
+                double D_AZ = D_BZ + D_CZ + D_DZ;
+                double D_Z  = D_AB*D_BZ + D_AC*D_CZ + D_AD*D_DZ;
                 
-                // If there is a solution, return it, otherwise, null
-                if (D == 0) return null;
-                return new Vector3D(D_X/D, D_Y/D, D_Z/D);
+                // If there is no solution, return null
+                if (D == 0d) return null;
+                
+                // Determine the target estimated position
+                Vector3D position = new Vector3D(D_X/D, D_Y/D, D_Z/D);
+                
+                // Calculate the error estimation in XYZ coordinates considering a +/- 5m error on the distances
+                double epsilon_X = Trilateration.errorCoefficient(D_AX, D, 5, D_A) + 
+                                   Trilateration.errorCoefficient(D_BX, D, 5, D_B) + 
+                                   Trilateration.errorCoefficient(D_CX, D, 5, D_C) + 
+                                   Trilateration.errorCoefficient(D_DX, D, 5, D_D);
+                double epsilon_Y = Trilateration.errorCoefficient(D_AY, D, 5, D_A) + 
+                                   Trilateration.errorCoefficient(D_BY, D, 5, D_B) + 
+                                   Trilateration.errorCoefficient(D_CY, D, 5, D_C) + 
+                                   Trilateration.errorCoefficient(D_DY, D, 5, D_D);
+                double epsilon_Z = Trilateration.errorCoefficient(D_AZ, D, 5, D_A) + 
+                                   Trilateration.errorCoefficient(D_BZ, D, 5, D_B) + 
+                                   Trilateration.errorCoefficient(D_CZ, D, 5, D_C) + 
+                                   Trilateration.errorCoefficient(D_DZ, D, 5, D_D);
+                Vector3D epsilon = new Vector3D(epsilon_X, epsilon_Y, epsilon_Z);// Error vector
+                
+                // Project the error in horizontal/verical coordinates
+                Vector3D planetVector = position-this._planet; // Vertical unitary vector
+                planetVector.Normalize();
+                Vector3D vertEpsilon = Vector3D.DotProduct(epsilon, planetVector)*planetVector;
+                Vector3D horzEpsilon = epsilon-vertEpsilon;
+                
+                // Return the estimated position and errors in horizontal and vertical directions
+                return Tuple.Create(position, horzEpsilon.Length, vertEpsilon.Length);
             }
             
             public TrilaterationResult calculateAverageTarget()
             {
+                // In this function, we calculate the position of the target and the error estimation 
+                // based on many points. To do that, we canculatethe target and error estimation for each
+                // Combination of 4 points. 
+                // We then reject the combinations where the error estimate is too high (more than 
+                // twice the median value), as for some combinations, we'll get crazily wrong values. 
+                // Finally, we average over the values we have left and normalize the error reduction
+                // due to the statistics collected. 
+                
                 // Check that we have enough data points
                 double dataCount = this._ranges.Count;
                 if (dataCount < 4)
@@ -1131,26 +1235,62 @@ namespace IngameScript
                     return TrilaterationResult.NotEnoughPoints;
                 }
                 
+                List<Tuple<Vector3D,double,double>> solutions = new List<Tuple<Vector3D,double,double>>();
                 List<Vector3D> targets = new List<Vector3D>();
-                Vector3D? target = null;
+                List<double> epsilonHorzVals = new List<double>();
+                List<double> epsilonVertVals = new List<double>();
                 
                 // Iterate over all the combinations of 4 Range points to measure the corresponding target
-                foreach (Range[] c in Combinations.getAllCombinations(this._ranges.ToArray(), 4))
+                IEnumerable<Range[]> comb = Combinations.getAllCombinations(this._ranges.ToArray(), 4);
+                foreach (Range[] c in comb)
                 {
-                    target = calculateSingleTarget(c[0], c[1], c[2], c[3]);
-                    if (target != null) targets.Add(target.Value); // If we have a solution, store it
+                    Tuple<Vector3D,double,double>? target = this.calculateSingleTarget(c[0], c[1], c[2], c[3]);
+                    if (target != null) { // If we have a solution, store it
+                        solutions.Add(target);
+                        epsilonHorzVals.Add(target.Item2);
+                        epsilonVertVals.Add(target.Item3);
+                    }
                 }
 
                 // If no combination of data gave a solution, report failure
-                if (targets.Count == 0)
+                if (epsilonHorzVals.Count == 0)
                 {
                     return TrilaterationResult.NoSolution;
                 }
                 
-                // Otherwise, the target is the average of the solutions found
-                this._calculatedTarget = new Vector3D(targets.Average(vect => vect.X),
-                                                      targets.Average(vect => vect.Y),
-                                                      targets.Average(vect => vect.Z));
+                // Calculate the Median error for vertical and horizontal values. 
+                double HorzMed = Median(epsilonHorzVals.ToArray());
+                double VertMed = Median(epsilonVertVals.ToArray());
+                
+                // Filter out the values where the error is out of bounds. 
+                epsilonHorzVals.Clear();
+                epsilonVertVals.Clear();
+                foreach (Tuple<Vector3D,double,double> target in sols)
+                {
+                    if (target.Item2 < 2*HorzMed && target.Item3 < 2*VertMed) { 
+                        targets.Add(target.Item1);
+                        // Console.WriteLine(String.Format("Position : {0:F}, {1:F}, {2:F}", target.Item1.X-this._planet.X, target.Item1.Y-this._planet.Y, target.Item1.Z-this._planet.Z));
+                        epsilonHorzVals.Add(target.Item2);
+                        epsilonVertVals.Add(target.Item3);
+                        // Console.WriteLine(String.Format("Horz : {0:F2}, Vert : {1:F2}", target.Item2, target.Item3));
+                    }
+                }
+                
+                
+                // The target is the average of the solutions found
+                _calculatedTarget = new Vector3D(targets.Average(vect => vect.X),
+                                                 targets.Average(vect => vect.Y),
+                                                 targets.Average(vect => vect.Z));
+                // The error is normalized so that the average error matches the average actual error. 
+                // Based on 10000 runs : 
+                // The estimated error and actual error distributions don't match, but that's normal. 
+                // It's likely due to the fact that we're just using a "maximum value" for the error, 
+                // so not the right error distribution. 
+                // The actual error can reach around 10 times the estimated ones. So it's to be 
+                // considered as a standard deviation more than anything. 
+                // It is however more likely that the actual error is less than the estimated one. 
+                this._epsilonHorz = 0.245*epsilonHorzVals.Average()/Math.Pow(3/2*epsilonHorzVals.Count,0.155);
+                this._epsilonVert = 0.230*epsilonVertVals.Average()/Math.Pow(3/2*epsilonVertVals.Count,0.155);
                 return TrilaterationResult.Ok;
             }
         }
